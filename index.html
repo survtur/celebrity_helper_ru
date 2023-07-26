@@ -1,0 +1,164 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+    <title>Title</title>
+    <script src="https://unpkg.com/vue@3/dist/vue.global.js"></script>
+    <script src="names.js"></script>
+    <style>
+        .hoverable:hover {
+            background-color: cyan;
+        }
+    </style>
+</head>
+<body style="line-height: 1.25; font-family: sans-serif">
+
+
+<div id="app">
+
+    <div v-if="selectedNames.length || hiddenNames.length"
+         style="z-index: 1;width: auto; position: fixed; right: 0.5em; bottom: 0.5em; box-shadow: #000 2px 2px 6px; padding: 0.2rem; background: #eee">
+        <div v-if="hiddenNames.length"> Скрытые: {{ hiddenNames.length }}</div>
+
+
+            <div v-for="(n,i) in selectedNames" class="hoverable" @click="deselect(i)" :key="n[1]">
+                {{i+1}}. {{n[1]}}
+            </div>
+
+        <button type="button" @click="hide">Скрыть</button>
+    </div>
+    <input type="search" v-model="search" placeholder="Поиск" style="font-size: 2rem; max-width: 100%"
+           :style="debug ? 'border-color: red': ''"/>
+    <p>{{realSearch}}</p>
+    <div v-if="search.length > 1">
+        <div v-for="(n,i) in filtered" :key="n[1]" style="margin: 0.5em">
+            <span class="hoverable" @click="select(n)">{{debug ? n : n[1]}}</span>
+            &nbsp;
+            <a :href="`https://m.yandex.ru/search/?text=${encodeURIComponent('кто такой ' + n[1] + '?')}`"
+               target="_blank"
+               style="font-size: 80%; padding: 0.2em 0.5em; border: 1px solid rgba(0,0,0,0.2)">кто это?</a>
+        </div>
+    </div>
+
+</div>
+
+<script>
+
+    function transliterate(text) {
+
+        text = text
+
+            .replace(/\u0401/g, 'YO')
+            .replace(/\u0410/g, 'A')
+            .replace(/\u0411/g, 'B')
+            .replace(/\u0412/g, 'V')
+            .replace(/\u0413/g, 'G')
+            .replace(/\u0414/g, 'D')
+            .replace(/\u0415/g, 'E')
+            .replace(/\u0416/g, 'ZH')
+            .replace(/\u0417/g, 'Z')
+            .replace(/\u0418/g, 'I')
+            .replace(/\u0419/g, 'Y') // I
+            .replace(/\u041A/g, 'K')
+            .replace(/\u041B/g, 'L')
+            .replace(/\u041C/g, 'M')
+            .replace(/\u041D/g, 'N')
+            .replace(/\u041E/g, 'O')
+            .replace(/\u041F/g, 'P')
+            .replace(/\u0420/g, 'R')
+            .replace(/\u0421/g, 'S')
+            .replace(/\u0422/g, 'T')
+            .replace(/\u0423/g, 'U')
+            .replace(/\u0424/g, 'F')
+            .replace(/\u0425/g, 'H')
+            .replace(/\u0426/g, 'TS')
+            .replace(/\u0427/g, 'CH')
+            .replace(/\u0428/g, 'SH')
+            .replace(/\u0429/g, 'SCH')
+            .replace(/\u042A/g, '')
+            .replace(/\u042B/g, 'I')
+            .replace(/\u042C/g, "'")
+            .replace(/\u042D/g, 'E')
+            .replace(/\u042E/g, 'YU')
+            .replace(/\u042F/g, 'YA')
+            .replace(/\u0430/g, 'a')
+            .replace(/\u0431/g, 'b')
+            .replace(/\u0432/g, 'v')
+            .replace(/\u0433/g, 'g')
+            .replace(/\u0434/g, 'd')
+            .replace(/\u0435/g, 'e')
+            .replace(/\u0436/g, 'zh')
+            .replace(/\u0437/g, 'z')
+            .replace(/\u0438/g, 'i')
+            .replace(/\u0439/g, 'y') // i
+            .replace(/\u043A/g, 'k')
+            .replace(/\u043B/g, 'l')
+            .replace(/\u043C/g, 'm')
+            .replace(/\u043D/g, 'n')
+            .replace(/\u043E/g, 'o')
+            .replace(/\u043F/g, 'p')
+            .replace(/\u0440/g, 'r')
+            .replace(/\u0441/g, 's')
+            .replace(/\u0442/g, 't')
+            .replace(/\u0443/g, 'u')
+            .replace(/\u0444/g, 'f')
+            .replace(/\u0445/g, 'h')
+            .replace(/\u0446/g, 'ts')
+            .replace(/\u0447/g, 'ch')
+            .replace(/\u0448/g, 'sh')
+            .replace(/\u0449/g, 'sch')
+            .replace(/\u044A/g, "")
+            .replace(/\u044B/g, 'i')
+            .replace(/\u044C/g, "'")
+            .replace(/\u044D/g, 'e')
+            .replace(/\u044F/g, 'ya')
+            .replace(/\u0451/g, 'yo')
+
+        return text;
+    };
+
+    const {createApp} = Vue;
+
+    createApp({
+        data() {
+            const names = NAMES.map(t => [`${transliterate(t).toUpperCase()} ♦ ${t.toUpperCase()}`, t]);
+            names.sort()
+            return {
+                allNames: names,
+                selectedNames: [],
+                hiddenNames: [],
+                search: '',
+                debug: (new URLSearchParams(location.search)).has('debug'),
+            }
+        },
+        methods: {
+            select(item) {
+                const inAllNames = this.allNames.indexOf(item);
+                this.allNames.splice(inAllNames, 1);
+                this.selectedNames.push(item);
+                this.selectedNames.sort()
+            },
+            deselect(i) {
+                const item = this.selectedNames.splice(i, 1);
+                this.allNames.push(item[0]);
+                this.allNames.sort();
+            },
+            hide() {
+                this.hiddenNames.push(...this.selectedNames);
+                this.selectedNames = [];
+            }
+        },
+        computed: {
+            realSearch() {
+                return transliterate(this.search).toUpperCase();
+            },
+            filtered() {
+                const ru = this.search.toUpperCase();
+                return this.allNames.filter(e => e[0].includes(this.realSearch) || e[0].includes(ru));
+            }
+        }
+    }).mount('#app')
+</script>
+</body>
+</html>
