@@ -16,15 +16,19 @@
 
 
 <div id="app">
-
+    <div v-if="showCleanButton">
+        <button type="button" @click.once="partialClean(25)" style="padding: 0.25em 2em; margin-bottom: 1em">Удалить 25%</button>
+        &nbsp;
+        <button type="button" @click.once="partialClean(50)" style="padding: 0.25em 2em; margin-bottom: 1em">Удалить 50%</button>
+    </div>
     <div v-if="selectedNames.length || hiddenNames.length"
          style="z-index: 1;width: auto; position: fixed; right: 0.5em; bottom: 0.5em; box-shadow: #000 2px 2px 6px; padding: 0.2rem; background: #eee">
         <div v-if="hiddenNames.length"> Скрытые: {{ hiddenNames.length }}</div>
 
 
-            <div v-for="(n,i) in selectedNames" class="hoverable" @click="deselect(i)" :key="n[1]">
-                {{i+1}}. {{n[1]}}
-            </div>
+        <div v-for="(n,i) in selectedNames" class="hoverable" @click="deselect(i)" :key="n[1]">
+            {{i + 1}}. {{n[1]}}
+        </div>
 
         <button type="button" @click="hide">Скрыть</button>
     </div>
@@ -33,8 +37,9 @@
     <p v-if="debug" style="color: red">{{realSearch}}</p>
     <div v-if="search.length > 1">
         <div v-for="(n,i) in filtered" :key="n[1]" style="margin: 0.5em">
-            <span class="hoverable" @click="select(n)">{{debug ? n : n[1]}}</span>
-            &nbsp;
+              <button type="button" @click="select(n)" style="padding: 0.25em 0.75em; margin-right: 1em; font-size: 1rem">
+                  {{debug ? n : n[1]}}
+              </button>
             <a :href="`https://m.yandex.ru/search/?text=${encodeURIComponent('кто такой ' + n[1] + '?')}`"
                target="_blank"
                style="font-size: 80%; padding: 0.2em 0.5em; border: 1px solid rgba(0,0,0,0.2)">кто это?</a>
@@ -126,13 +131,31 @@
             names.sort()
             return {
                 allNames: names,
+                excluded: [],
                 selectedNames: [],
                 hiddenNames: [],
                 search: '',
                 debug: (new URLSearchParams(location.search)).has('debug'),
+                showCleanButton: true,
             }
         },
         methods: {
+            partialClean(cleanPercent) {
+                const lim = cleanPercent / 100;
+                this.showCleanButton = false;
+                const left = [];
+                const excluded = [];
+                for (let n of this.allNames) {
+                    if (Math.random() >= lim) {
+                        left.push(n)
+                    } else {
+                        excluded.push(n)
+                    }
+                }
+                this.allNames = left;
+                this.excluded = excluded;
+
+            },
             select(item) {
                 const inAllNames = this.allNames.indexOf(item);
                 this.allNames.splice(inAllNames, 1);
