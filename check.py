@@ -22,6 +22,7 @@ with open('celebs.txt', mode='tr') as f:
         celebs[h].append(c)
 
 result = list(sorted(chain(*celebs.values())))
+print(f"Всего {len(result)}")
 
 out = json.dumps(result, ensure_ascii=False)
 with open("names.js", mode='tw', encoding='utf-8') as f:
